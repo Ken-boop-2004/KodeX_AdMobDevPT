@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
@@ -12,7 +11,7 @@ import {
 } from 'react-native';
 import {
   SafeAreaProvider,
-  useSafeAreaInsets,
+  SafeAreaView,
 } from 'react-native-safe-area-context';
 
 const POKE_API_URL = 'https://pokeapi.co/api/v2/pokemon';
@@ -54,16 +53,10 @@ function App() {
 }
 
 function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
-
-  return <PokedexScreen topInset={safeAreaInsets.top} />;
+  return <PokedexScreen />;
 }
 
-type PokedexScreenProps = {
-  topInset: number;
-};
-
-function PokedexScreen({ topInset }: PokedexScreenProps) {
+function PokedexScreen() {
   const [pokemon, setPokemon] = useState<PokemonDetail[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
@@ -136,7 +129,7 @@ function PokedexScreen({ topInset }: PokedexScreenProps) {
   const showFullScreenError = Boolean(error && !hasData);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { paddingTop: topInset }]}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Pokédex</Text>
         <Text style={styles.headerSubtitle}>
