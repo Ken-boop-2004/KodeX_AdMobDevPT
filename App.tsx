@@ -13,6 +13,7 @@ import {
   SafeAreaProvider,
   SafeAreaView,
 } from 'react-native-safe-area-context';
+import LoadingScreen from './LoadingScreen';
 
 const POKE_API_URL = 'https://pokeapi.co/api/v2/pokemon';
 const PAGE_SIZE = 20;
@@ -44,6 +45,21 @@ type PokemonListResponse = {
 };
 
 function App() {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Show loading screen for 0.75 seconds
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 750);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <SafeAreaProvider>
       <StatusBar barStyle="light-content" backgroundColor="#ef5350" />
