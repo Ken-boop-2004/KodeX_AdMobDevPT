@@ -1,4 +1,4 @@
-package com.myreactnativeapp
+package com.pokeapp_cursor
 
 import android.app.Application
 import com.facebook.react.PackageList

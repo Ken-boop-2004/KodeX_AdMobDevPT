@@ -14,6 +14,9 @@ import {
   SafeAreaView,
 } from 'react-native-safe-area-context';
 import LoadingScreen from './LoadingScreen';
+import { AuthProvider, useAuth } from './AuthContext';
+import LoginScreen from './LoginScreen';
+import SignupScreen from './SignupScreen';
 
 const POKE_API_URL = 'https://pokeapi.co/api/v2/pokemon';
 const PAGE_SIZE = 20;
@@ -61,24 +64,91 @@ function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <StatusBar barStyle="light-content" backgroundColor="#ef5350" />
-      <AppContent />
-    </SafeAreaProvider>
+    <AuthProvider>
+      <SafeAreaProvider>
+        <StatusBar barStyle="light-content" backgroundColor="#ef5350" />
+        <AppContent />
+      </SafeAreaProvider>
+    </AuthProvider>
   );
 }
 
 function AppContent() {
+  const { user, loading } = useAuth();
+  const [hasSeenAuth, setHasSeenAuth] = useState<boolean | null>(null);
+  const [showLogin, setShowLogin] = useState(true); // Start with login for returning users
+
+  useEffect(() => {
+    // Check if user has seen auth screens before
+    const checkAuthHistory = async () => {
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      const seen = await AsyncStorage.getItem('hasSeenAuth');
+      setHasSeenAuth(seen === 'true');
+      // For new users, show signup screen
+      if (seen !== 'true') {
+        setShowLogin(false);
+      }
+    };
+    checkAuthHistory();
+  }, []);
+
+  useEffect(() => {
+    // Mark that user has seen auth screens
+    const markAuthSeen = async () => {
+      if (!user && hasSeenAuth !== null) {
+        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+        await AsyncStorage.setItem('hasSeenAuth', 'true');
+      }
+    };
+    markAuthSeen();
+  }, [user, hasSeenAuth]);
+
+  if (loading || hasSeenAuth === null) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#ef5350" />
+      </View>
+    );
+  }
+
+  if (!user) {
+    // New users see signup first, returning users see login
+    if (hasSeenAuth) {
+      // Returning user who logged out - show login by default but can navigate to signup
+      return showLogin ? (
+        <LoginScreen onNavigateToSignup={() => setShowLogin(false)} />
+      ) : (
+        <SignupScreen onNavigateToLogin={() => setShowLogin(true)} />
+      );
+    } else {
+      // Brand new user - show signup (create trainer account)
+      return showLogin ? (
+        <LoginScreen onNavigateToSignup={() => setShowLogin(false)} />
+      ) : (
+        <SignupScreen onNavigateToLogin={() => setShowLogin(true)} />
+      );
+    }
+  }
+
   return <PokedexScreen />;
 }
 
 function PokedexScreen() {
+  const { signOut, user } = useAuth();
   const [pokemon, setPokemon] = useState<PokemonDetail[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [nextOffset, setNextOffset] = useState<number>(0);
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const fetchPokemonBatch = async (offset: number) => {
     const listResponse = await fetch(`${POKE_API_URL}?offset=${offset}&limit=${PAGE_SIZE}`);
@@ -147,10 +217,15 @@ function PokedexScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Pokédex</Text>
-        <Text style={styles.headerSubtitle}>
-          Browse Pokémon, their abilities, types, and stats powered by PokeAPI.
-        </Text>
+        <View>
+          <Text style={styles.headerTitle}>Pokédex</Text>
+          <Text style={styles.headerSubtitle}>
+            Browse Pokémon, their abilities, types, and stats powered by PokeAPI.
+          </Text>
+        </View>
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+          <Text style={styles.logoutButtonText}>Logout</Text>
+        </TouchableOpacity>
       </View>
 
       {error && hasData && (
@@ -288,7 +363,10 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 8,
+    paddingBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   headerTitle: {
     fontSize: 28,
@@ -464,6 +542,18 @@ const styles = StyleSheet.create({
   errorBannerButtonText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  logoutButton: {
+    backgroundColor: '#ef5350',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 4,
+  },
+  logoutButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
 

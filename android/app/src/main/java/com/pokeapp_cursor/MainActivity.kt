@@ -1,4 +1,4 @@
-package com.myreactnativeapp
+package com.pokeapp_cursor
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
