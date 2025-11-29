@@ -50,5 +50,19 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<!-- TODO: Replace with REVERSED_CLIENT_ID from GoogleService-Info.plist -->
+				<!-- After configuring OAuth in Firebase Console, download the updated GoogleService-Info.plist -->
+				<!-- and copy the REVERSED_CLIENT_ID value here -->
+				<string>REPLACE_WITH_REVERSED_CLIENT_ID</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
