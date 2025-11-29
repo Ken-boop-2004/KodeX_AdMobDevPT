@@ -1,8 +1,23 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+This project extends the default React Native template into a mini Pokédex experience with:
+
+- Incremental list loading backed by PokéAPI
+- Search & filtering by name, type, or Pokédex ID
+- A dedicated detail screen showing flavor text, stats, and evolution chain
+- Offline caching (AsyncStorage) for the most recent list + detail payloads
+- Firebase Auth (email/password + Google) with Firestore-powered user profiles
 
 # Getting Started
 
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+
+## Install JS dependencies
+
+```sh
+npm install
+cd ios && pod install && cd ..
+```
+
+This pulls in the newly added React Navigation, Gesture Handler, Reanimated, and AsyncStorage packages. Reanimated already has its Babel plugin enabled (see `babel.config.js`).
 
 ## Step 1: Start Metro
 
@@ -62,36 +77,38 @@ If everything is set up correctly, you should see your new app running in the An
 
 This is one way to run your app — you can also build it directly from Android Studio or Xcode.
 
-## Step 3: Modify your app
+# Feature guide
 
-Now that you have successfully run the app, let's make changes!
+| Area | Details |
+| --- | --- |
+| Pokédex list | `src/screens/PokedexScreen.tsx` uses `usePokemonList` to load/cached pages, expose search+type chips, and navigate to detail |
+| Detail screen | `src/screens/PokemonDetailScreen.tsx` pulls species + evolution data, with pull-to-refresh and cached fallback |
+| Offline cache | Implemented via AsyncStorage (`src/storage/pokemonCache.ts`) with 12h TTL for list + per-Pokémon detail bundles |
+| Navigation | Native stack navigation configured in `App.tsx` with gesture handler + safe area provider |
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+## Offline-first behavior
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+1. On launch the list attempts to hydrate from cache before calling PokéAPI.
+2. Detail views read from cache immediately when available, then refresh in the background.
+3. Errors while offline surface a banner but keep cached data visible.
+4. Pull-to-refresh re-runs the network requests.
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+## Firebase auth + social sign-in
 
-## Congratulations! :tada:
+The app now gates navigation through `AuthProvider` (`src/context/AuthContext.tsx`) and offers:
 
-You've successfully run and modified your React Native App. :partying_face:
+- **Email/password** sign-up + sign-in (`src/screens/Auth/*`) backed by `@react-native-firebase/auth`.
+- **Google Sign-In** (Android-first): configure it once and users can tap “Continue with Google” on the sign-in screen.
 
-### Now what?
+### Configure Google Sign-In
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+1. In the Firebase console, enable the **Google** provider under **Authentication > Sign-in method**.
+2. From **Project settings > General**, copy the **Web client ID** for your Android app (it ends with `.apps.googleusercontent.com`).
+3. Update `WEB_CLIENT_ID` inside `src/firebase/googleSignIn.ts` with that value. Until you do, the app will warn at startup and the Google button will stay disabled.
+4. (Optional iOS) Add the reversed client ID to your Xcode URL types once you can run the project on macOS.
 
-# Troubleshooting
+The JS side automatically calls `configureGoogleSignIn()` on launch (see `App.tsx`). On success, `signInWithGoogle()` exchanges the Google token for Firebase credentials and seeds the Firestore profile just like the email flow.
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+## Next steps
 
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+The remaining backlog from the spec (personal Pokédex UI, Hunt map, camera/voice/AR integrations, etc.) can build on this structure. Global state (Redux/Context), permissions flows, and device feature hooks will slot in under `src/` alongside the new modules.

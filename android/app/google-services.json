@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "282171919212",
+    "project_id": "kodex-2962d",
+    "storage_bucket": "kodex-2962d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:282171919212:android:142856ddd62648a9174149",
+        "android_client_info": {
+          "package_name": "com.myreactnativeapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7gnTqrF49g67FNBjFueNThMaSIKGC6Eg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
