@@ -50,9 +50,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      // Try to revoke Google access if available, but don't fail if it errors
+      try {
+        await GoogleSignin.revokeAccess();
+      } catch (googleError) {
+        // Ignore Google sign-out errors (user might not have signed in with Google)
+        console.log('Google revoke access skipped:', googleError);
+      }
+      
       await auth().signOut();
-      await GoogleSignin.revokeAccess();
     } catch (error) {
+      console.error('Logout error:', error);
       throw error;
     }
   };
