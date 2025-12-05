@@ -4,7 +4,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 import { UserProfile } from '../types/user';
 
-const usersCollection = firestore().collection('users');
+const trainersCollection = firestore().collection('trainers');
 
 const defaultProfile = (user: FirebaseAuthTypes.User, displayName?: string): UserProfile => ({
   uid: user.uid,
@@ -33,7 +33,7 @@ export const ensureUserProfileDocument = async (
     return;
   }
 
-  const docRef = usersCollection.doc(user.uid);
+  const docRef = trainersCollection.doc(user.uid);
   const snapshot = await docRef.get();
   if (!snapshot.exists) {
     await docRef.set(defaultProfile(user, displayName));

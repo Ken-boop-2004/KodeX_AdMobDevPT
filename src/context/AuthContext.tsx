@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
         return;
       }
       return firestore()
-        .collection('users')
+        .collection('trainers')
         .doc(user.uid)
         .onSnapshot((snapshot) => {
           const exists =

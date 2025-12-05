@@ -17,14 +17,18 @@ import {
   clearWatch,
   Location,
   LocationError,
+  detectBiome,
 } from '../services/geolocation';
 import { spawnPokemonNearby, SpawnedPokemon, removeSpawn } from '../services/pokemonSpawn';
+import { saveCaughtPokemon } from '../services/pokemonCollection';
+import { useAuth } from '../../AuthContext';
 import { MainStackParamList } from '../navigation/types';
 import { capitalize } from '../utils/pokemon';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'Hunt'>;
 
 export const HuntScreen = ({ navigation }: Props) => {
+  const { user } = useAuth();
   const [location, setLocation] = useState<Location | null>(null);
   const [spawns, setSpawns] = useState<SpawnedPokemon[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,10 +138,30 @@ export const HuntScreen = ({ navigation }: Props) => {
     );
   };
 
-  const handleCatchPokemon = (spawn: SpawnedPokemon) => {
-    removeSpawn(spawn.id);
-    setSpawns((prev) => prev.filter((s) => s.id !== spawn.id));
-    Alert.alert('Gotcha!', `You caught ${capitalize(spawn.pokemon.name)}!`);
+  const handleCatchPokemon = async (spawn: SpawnedPokemon) => {
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to catch Pokémon');
+      return;
+    }
+
+    try {
+      // Save to Firestore
+      await saveCaughtPokemon(
+        user.uid,
+        spawn.pokemon,
+        location ? { latitude: location.lat, longitude: location.lng } : undefined,
+        location ? detectBiome(location) : undefined,
+      );
+
+      // Remove from spawns
+      removeSpawn(spawn.id);
+      setSpawns((prev) => prev.filter((s) => s.id !== spawn.id));
+
+      Alert.alert('Gotcha!', `You caught ${capitalize(spawn.pokemon.name)}!`);
+    } catch (error) {
+      console.error('Failed to save caught Pokemon:', error);
+      Alert.alert('Error', 'Failed to save your catch. Please try again.');
+    }
   };
 
   const handleRefresh = () => {

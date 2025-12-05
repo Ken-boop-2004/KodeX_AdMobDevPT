@@ -17,10 +17,13 @@ import { MainStackParamList } from '../navigation/types';
 import { PokemonDetail } from '../types/pokemon';
 import { capitalize, getSpriteUri } from '../utils/pokemon';
 import { fetchPokemonDetailBundle } from '../services/pokeApi';
+import { saveCaughtPokemon } from '../services/pokemonCollection';
+import { useAuth } from '../../AuthContext';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'ARCamera'>;
 
 export const ARCameraScreen = ({ navigation }: Props) => {
+  const { user } = useAuth();
   const { hasPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('back');
   const camera = useRef<Camera>(null);
@@ -28,6 +31,7 @@ export const ARCameraScreen = ({ navigation }: Props) => {
   const [overlayPokemon, setOverlayPokemon] = useState<PokemonDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!hasPermission) {
@@ -60,23 +64,59 @@ export const ARCameraScreen = ({ navigation }: Props) => {
       return;
     }
 
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to catch Pokémon');
+      return;
+    }
+
+    if (!overlayPokemon) {
+      Alert.alert('No Pokémon', 'Please spawn a Pokémon first!');
+      return;
+    }
+
     try {
+      setSaving(true);
+      
       const photo = await camera.current.takePhoto({
         flash: 'off',
       });
 
+      // Save caught Pokemon to Firestore
+      await saveCaughtPokemon(
+        user.uid,
+        overlayPokemon,
+        undefined, // No location for AR catches
+        'ar-camera', // Special biome tag for AR catches
+      );
+
       setCapturedPhoto(`file://${photo.path}`);
+      
       Alert.alert(
-        'Photo Captured!',
-        overlayPokemon ? `You captured ${capitalize(overlayPokemon.name)}!` : 'Photo saved!',
+        'Gotcha!',
+        `You caught ${capitalize(overlayPokemon.name)}!\n\nCheck your Collection tab to see it.`,
         [
-          { text: 'Retake', onPress: () => setCapturedPhoto(null) },
-          { text: 'OK', onPress: () => setCapturedPhoto(null) },
+          { 
+            text: 'View Collection', 
+            onPress: () => {
+              setCapturedPhoto(null);
+              setOverlayPokemon(null);
+              navigation.navigate('PokedexTab' as any);
+            }
+          },
+          { 
+            text: 'Catch More', 
+            onPress: () => {
+              setCapturedPhoto(null);
+              setOverlayPokemon(null);
+            }
+          },
         ],
       );
     } catch (error) {
-      console.warn('Error taking photo:', error);
-      Alert.alert('Error', 'Failed to capture photo');
+      console.warn('Error catching Pokemon:', error);
+      Alert.alert('Error', 'Failed to catch Pokémon. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -156,8 +196,16 @@ export const ARCameraScreen = ({ navigation }: Props) => {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
-          <View style={styles.captureButtonInner} />
+        <TouchableOpacity 
+          style={styles.captureButton} 
+          onPress={takePhoto}
+          disabled={saving || !overlayPokemon}
+        >
+          {saving ? (
+            <ActivityIndicator color="#fff" size="large" />
+          ) : (
+            <View style={styles.captureButtonInner} />
+          )}
         </TouchableOpacity>
 
         {overlayPokemon && (

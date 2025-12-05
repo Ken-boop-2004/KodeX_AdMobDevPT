@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { MainStackParamList, TabParamList } from './src/navigation/types';
 import { PokedexScreen } from './src/screens/PokedexScreen';
+import { CaughtPokemonScreen } from './src/screens/CaughtPokemonScreen';
 import { PokemonDetailScreen } from './src/screens/PokemonDetailScreen';
 import { HuntScreen } from './src/screens/HuntScreen';
 import { ARCameraScreen } from './src/screens/ARCameraScreen';
@@ -39,6 +40,12 @@ const PokedexTab = () => (
         title: capitalize(route.params.name),
       })}
     />
+  </MainStack.Navigator>
+);
+
+const CollectionTab = () => (
+  <MainStack.Navigator screenOptions={screenOptions}>
+    <MainStack.Screen name="Collection" component={CaughtPokemonScreen} options={{ title: 'My Collection', headerShown: false }} />
   </MainStack.Navigator>
 );
 
@@ -158,6 +165,14 @@ function AppContent() {
           options={{
             title: 'Pokédex',
             tabBarIcon: () => <TabIcon emoji="📖" />,
+          }}
+        />
+        <Tab.Screen
+          name="CollectionTab"
+          component={CollectionTab}
+          options={{
+            title: 'Collection',
+            tabBarIcon: () => <TabIcon emoji="🎒" />,
           }}
         />
         <Tab.Screen
