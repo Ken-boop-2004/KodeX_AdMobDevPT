@@ -1,9 +1,16 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { CONFIG } from '../config/appConfig';
 
 /**
  * Web Client ID for Google Sign-In
  * 
- * To find this value:
+ * The WEB_CLIENT_ID is now loaded from src/config/appConfig.ts
+ * 
+ * To configure:
+ * 1. Copy src/config/appConfig.local.example.ts to src/config/appConfig.local.ts
+ * 2. Add your Web Client ID to the local config file
+ * 
+ * To find your Web Client ID:
  * 1. Go to Firebase Console: https://console.firebase.google.com/
  * 2. Select your project: kodex-2962d
  * 3. Go to Project Settings (gear icon) → General tab
@@ -21,12 +28,13 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
  * 5. Look for the one with type "Web client"
  * 6. Copy the Client ID
  */
-const WEB_CLIENT_ID = 'REPLACE_WITH_YOUR_WEB_CLIENT_ID.apps.googleusercontent.com';
 
 export const configureGoogleSignIn = () => {
+  const WEB_CLIENT_ID = CONFIG.GOOGLE_WEB_CLIENT_ID;
+  
   if (!WEB_CLIENT_ID || WEB_CLIENT_ID.startsWith('REPLACE_WITH')) {
     console.warn(
-      '[GoogleSignIn] WEB_CLIENT_ID is not set. Update src/firebase/googleSignIn.ts to enable Google authentication.',
+      '[GoogleSignIn] WEB_CLIENT_ID is not set. Create src/config/appConfig.local.ts with your Web Client ID to enable Google authentication.',
     );
     return;
   }

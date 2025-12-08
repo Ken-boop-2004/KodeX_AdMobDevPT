@@ -1,6 +1,5 @@
-import Geolocation from '@react-native-community/geolocation';
 import { Platform, PermissionsAndroid } from 'react-native';
-
+import Geolocation from 'react-native-geolocation-service';
 export type Location = {
   latitude: number;
   longitude: number;
@@ -15,17 +14,16 @@ export type LocationError = {
 const requestLocationPermission = async (): Promise<boolean> => {
   if (Platform.OS === 'android') {
     try {
-      const granted = await PermissionsAndroid.request(
+      const result = await PermissionsAndroid.requestMultiple([
         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-        {
-          title: 'Location Permission',
-          message: 'Pokédex needs access to your location to find nearby Pokémon.',
-          buttonNeutral: 'Ask Me Later',
-          buttonNegative: 'Cancel',
-          buttonPositive: 'OK',
-        },
-      );
-      return granted === PermissionsAndroid.RESULTS.GRANTED;
+        PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+      ]);
+
+      const fineGranted = result[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION] === PermissionsAndroid.RESULTS.GRANTED;
+      const coarseGranted = result[PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION] === PermissionsAndroid.RESULTS.GRANTED;
+
+      // Accept coarse if user declines precise but allows approximate
+      return fineGranted || coarseGranted;
     } catch (err) {
       console.warn('Location permission error:', err);
       return false;
@@ -34,29 +32,33 @@ const requestLocationPermission = async (): Promise<boolean> => {
   return true; // iOS handles permissions via Info.plist
 };
 
-export const getCurrentLocation = (): Promise<Location> => {
-  return new Promise((resolve, reject) => {
-    Geolocation.getCurrentPosition(
-      (position) => {
-        resolve({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-        });
-      },
-      (error) => {
-        reject({
-          code: error.code,
-          message: error.message,
-        } as LocationError);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 10000,
-      },
-    );
-  });
+export const getCurrentLocation = async (): Promise<Location> => {
+  const tryGet = (options: { enableHighAccuracy: boolean; timeout: number; maximumAge: number }) =>
+    new Promise<Location>((resolve, reject) => {
+      Geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+          });
+        },
+        (error) => {
+          reject({
+            code: error.code,
+            message: error.message,
+          } as LocationError);
+        },
+        options,
+      );
+    });
+
+  try {
+    return await tryGet({ enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
+  } catch (err) {
+    console.warn('High accuracy location failed, retrying with coarse:', err);
+    return await tryGet({ enableHighAccuracy: false, timeout: 15000, maximumAge: 10000 });
+  }
 };
 
 export const watchLocation = (
@@ -79,8 +81,9 @@ export const watchLocation = (
     },
     {
       enableHighAccuracy: true,
-      distanceFilter: 10, // Update every 10 meters
-      interval: 5000, // Update every 5 seconds
+      distanceFilter: 3, // Update every 3 meters
+      interval: 3000, // Update every 3 seconds
+      fastestInterval: 2000,
     },
   );
 };
@@ -96,33 +99,16 @@ export const requestLocationAccess = async (): Promise<boolean> => {
 // Biome detection based on coordinates
 export type Biome = 'urban' | 'rural' | 'water' | 'forest' | 'mountain' | 'unknown';
 
+// Deterministic biome selection using lat/lng hash (no external API)
 export const detectBiome = (location: Location): Biome => {
-  // Simple biome detection based on coordinates
-  // In a real app, you'd use Google Maps API or other services
   const { latitude, longitude } = location;
+  const hash = Math.abs(Math.floor((latitude + longitude) * 1000)) % 10;
 
-  // Example logic (you can enhance this with actual map data)
-  // Water biome: near coastlines or specific coordinates
-  if (Math.abs(latitude) < 0.1 && Math.abs(longitude) < 0.1) {
-    return 'water';
-  }
-
-  // Urban: higher population density areas (simplified)
-  if (Math.abs(latitude) > 30 && Math.abs(latitude) < 50) {
-    return 'urban';
-  }
-
-  // Forest: certain latitude ranges
-  if (Math.abs(latitude) > 40 && Math.abs(latitude) < 60) {
-    return 'forest';
-  }
-
-  // Mountain: high altitude areas (simplified)
-  if (Math.abs(latitude) > 45) {
-    return 'mountain';
-  }
-
-  return 'rural';
+  if (hash < 3) return 'water';
+  if (hash < 5) return 'forest';
+  if (hash < 7) return 'urban';
+  if (hash < 9) return 'rural';
+  return 'mountain';
 };
 
 // Get Pokémon types that spawn in a biome

@@ -11,6 +11,15 @@ buildscript {
     repositories {
         google()
         mavenCentral()
+        // Mapbox artifacts live behind an authenticated repository
+        maven {
+            url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
+            authentication { basic(BasicAuthentication) }
+            credentials {
+                username = "mapbox"
+                password = project.findProperty("MAPBOX_DOWNLOADS_TOKEN") ?: System.getenv("MAPBOX_DOWNLOADS_TOKEN")
+            }
+        }
     }
     dependencies {
         classpath("com.android.tools.build:gradle:$agpVersion")
@@ -21,3 +30,19 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+// Allow all modules to resolve Mapbox artifacts
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
+            authentication { basic(BasicAuthentication) }
+            credentials {
+                username = "mapbox"
+                password = project.findProperty("MAPBOX_DOWNLOADS_TOKEN") ?: System.getenv("MAPBOX_DOWNLOADS_TOKEN")
+            }
+        }
+    }
+}

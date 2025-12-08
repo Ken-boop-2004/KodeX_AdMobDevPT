@@ -2,19 +2,26 @@ import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
-import { UserProfile } from '../types/user';
+import { UserPreferences, UserProfile } from '../types/user';
 
 const usersCollection = firestore().collection('users');
+
+const defaultPreferences: UserPreferences = {
+  units: 'metric',
+  notifications: true,
+  mapStyle: 'standard',
+};
 
 const defaultProfile = (user: FirebaseAuthTypes.User, displayName?: string): UserProfile => ({
   uid: user.uid,
   email: user.email ?? '',
   displayName: displayName ?? user.displayName ?? user.email ?? 'Trainer',
   photoURL: user.photoURL,
-  badges: [],
-  points: 0,
-  favoritesCount: 0,
-  caughtCount: 0,
+  preferences: defaultPreferences,
+  stats: {
+    totalCaught: 0,
+    lastHuntAt: null,
+  },
   createdAt: firestore.FieldValue.serverTimestamp() as unknown as UserProfile['createdAt'],
   updatedAt: firestore.FieldValue.serverTimestamp() as unknown as UserProfile['updatedAt'],
 });

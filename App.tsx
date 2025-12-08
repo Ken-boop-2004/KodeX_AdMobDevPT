@@ -6,7 +6,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator, NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { MainStackParamList, TabParamList } from './src/navigation/types';
@@ -14,6 +14,7 @@ import { PokedexScreen } from './src/screens/PokedexScreen';
 import { PokemonDetailScreen } from './src/screens/PokemonDetailScreen';
 import { HuntScreen } from './src/screens/HuntScreen';
 import { ARCameraScreen } from './src/screens/ARCameraScreen';
+import { ProfileScreen } from './src/screens/ProfileScreen';
 import { capitalize } from './src/utils/pokemon';
 import LoadingScreen from './LoadingScreen';
 import { AuthProvider, useAuth } from './AuthContext';
@@ -137,49 +138,67 @@ function AppContent() {
   // User is logged in - show main app with navigation
   return (
     <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={{
-          tabBarActiveTintColor: '#ef5350',
-          tabBarInactiveTintColor: '#7b7b85',
-          tabBarStyle: {
-            backgroundColor: '#fff',
-            borderTopColor: '#ececf2',
-            borderTopWidth: 1,
-            paddingBottom: 5,
-            paddingTop: 5,
-            height: 60,
-          },
-          headerShown: false,
-        }}
-      >
-        <Tab.Screen
-          name="PokedexTab"
-          component={PokedexTab}
-          options={{
-            title: 'Pokédex',
-            tabBarIcon: () => <TabIcon emoji="📖" />,
-          }}
-        />
-        <Tab.Screen
-          name="HuntTab"
-          component={HuntTab}
-          options={{
-            title: 'Hunt',
-            tabBarIcon: () => <TabIcon emoji="🗺️" />,
-          }}
-        />
-        <Tab.Screen
-          name="ARCameraTab"
-          component={ARCameraTab}
-          options={{
-            title: 'AR',
-            tabBarIcon: () => <TabIcon emoji="📷" />,
-          }}
-        />
-      </Tab.Navigator>
+      <TabNavigator />
     </NavigationContainer>
   );
 }
+
+const TabNavigator = () => {
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 12);
+
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: '#ef5350',
+        tabBarInactiveTintColor: '#7b7b85',
+        tabBarStyle: {
+          backgroundColor: '#fff',
+          borderTopColor: '#ececf2',
+          borderTopWidth: 1,
+          paddingBottom: bottomInset,
+          paddingTop: 6,
+          height: 56 + bottomInset,
+        },
+        tabBarHideOnKeyboard: true,
+        headerShown: false,
+      }}
+    >
+      <Tab.Screen
+        name="PokedexTab"
+        component={PokedexTab}
+        options={{
+          title: 'Pokédex',
+          tabBarIcon: () => <TabIcon emoji="📖" />,
+        }}
+      />
+      <Tab.Screen
+        name="HuntTab"
+        component={HuntTab}
+        options={{
+          title: 'Hunt',
+          tabBarIcon: () => <TabIcon emoji="🗺️" />,
+        }}
+      />
+      <Tab.Screen
+        name="ARCameraTab"
+        component={ARCameraTab}
+        options={{
+          title: 'AR',
+          tabBarIcon: () => <TabIcon emoji="📷" />,
+        }}
+      />
+      <Tab.Screen
+        name="ProfileTab"
+        component={ProfileScreen}
+        options={{
+          title: 'Profile',
+          tabBarIcon: () => <TabIcon emoji="👤" />,
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
 
 const TabIcon = ({ emoji }: { emoji: string }) => (
   <Text style={{ fontSize: 24 }}>{emoji}</Text>

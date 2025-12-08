@@ -85,6 +85,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        // Provide Google Maps SDK key via Gradle property or env var (keeps secrets out of source)
+        resValue "string", "google_maps_api_key", (project.findProperty("MAPS_API_KEY") ?: System.getenv("MAPS_API_KEY") ?: "")
     }
     signingConfigs {
         debug {
