@@ -1,3 +1,8 @@
+Member: 
+Ken Frederick S. Enaron
+Ezekiel Angelo Colon
+Karl Emmanuel Medina
+
 This project extends the default React Native template into a mini Pokédex experience with:
 
 - Incremental list loading backed by PokéAPI
